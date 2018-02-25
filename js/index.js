@@ -11,17 +11,18 @@ var MapViewModel = function () {
     var self = this; //ko
     var map, infoWindow; //地图，弹窗
 
-    //ko绑定
-    self.places = ko.observableArray([]);
-    self.markers = ko.observableArray([]);
-    self.filterPlaces = ko.observableArray([]);
-    self.searchText = ko.observable('');
-    self.errorMessage = ko.observable('');
+    //ko相关绑定
+    self.places = ko.observableArray([]);//存原始数据
+    self.markers = ko.observableArray([]);//存标记
+    self.filterPlaces = ko.observableArray([]);//实际展示在页面上的兴趣点
+    self.searchText = ko.observable('');//页面绑定的搜索框
+    self.errorMessage = ko.observable('');//错误信息
 
     self.clickPlaces = function (item) {
-        var currentMarkerId = item.id;
+        var currentMarkerId = item.id;//当前位置id(列表)
 
         self.markers().forEach(function (item) {
+            //列表与map上marker的id相等时
             if (currentMarkerId == item.id) {
                 //动画
                 if (item.marker.getAnimation()) {
@@ -36,9 +37,8 @@ var MapViewModel = function () {
             }
         });
     };
-    //search place.
+    //搜索按钮绑定方法(ko)
     self.searchPlaces = function () {
-        //搜索方法(直接在页面上用ko做的绑定)
         var searchWord = self.searchText().toLowerCase();
         var bounds = new google.maps.LatLngBounds();
         if (!searchWord) {
@@ -70,6 +70,7 @@ var MapViewModel = function () {
         }
     };
 
+    //重置
     self.reset = function () {
         //重置搜索框(直接在页面上用ko做的绑定)
         var bounds = new google.maps.LatLngBounds();
@@ -85,11 +86,12 @@ var MapViewModel = function () {
         map.fitBounds(bounds);
         //隐藏信息弹窗
         hideMarkerInfo();
+        //隐藏报错框
         hideErrorMsg();
 
     };
 
-    //获取定位附近餐馆(利用foursquare API)
+    //获取定位附近兴趣点(利用foursquare API)
     function getPlaces() {
         $.ajax({
             url: foursquareAPIUrl + '/venues/search?ll=' + locationCenter +
@@ -100,11 +102,13 @@ var MapViewModel = function () {
                 var resultData = result.response.venues;
                 addMarker(resultData);
                 self.filterPlaces(result.response.venues);
+                //存初始结果，重置时用
                 self.places(resultData);
 
                 hideErrorMsg();
             }
         }).fail(function (e) {
+            //失败
             self.errorMessage('错误：获取兴趣点数据失败');
             showErrorMsg();
         });
@@ -148,10 +152,9 @@ var MapViewModel = function () {
 
                     marker.animation = google.maps.Animation.DROP;
                     infoWindow.setContent(contentString);
-
-                    //map.setCenter(marker.position);
                     infoWindow.open(map, marker);
 
+                    //隐藏错误信息
                     hideErrorMsg();
                 }
             },
@@ -173,7 +176,7 @@ var MapViewModel = function () {
         $('.ERROR-MSG').hide();
     }
 
-    //add marker
+    //加标记
     function addMarker(places) {
         var bounds = new google.maps.LatLngBounds();
 
