@@ -1,147 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>街区地图 - Block Map</title>
     <link rel="stylesheet" href="./css/normalize.css">
+    <link rel="stylesheet" href="./css/bootstrap/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <style>
-        html, body{height: 100%;}
-        body.toggle-sidebar .header, body.toggle-sidebar .main{
-            width: calc(100% - 200px);
-            transform: translateX(200px);
-            transition: transform 0.2s linear, width 0.2s linear;
-        }
-        body .header, body .main{
-            width: 100%;
-            transform: translateX(0px);
-            transition: transform 0.2s linear, width 0.2s linear;
-        }
-        body.toggle-sidebar .left-sidebar{
-            transform: translateX(200px);
-            transition: transform 0.2s linear;
-        }
-        body .left-sidebar{
-            transform: translateX(0);
-            transition: transform 0.2s linear;
-        }
-        .header{
-            width: 100%;
-            height: 50px;
-            background: #000000;
-            box-shadow: 0 1px 10px #555;
-            position:fixed;
-            z-index: 2000;
-        }
-        .left-sidebar{
-            width: 200px;
-            left: -200px;
-            top:0;
-            bottom: 0;
-            position: absolute;
-            z-index: 3000;
-            background: #666;
-        }
-        .left-sidebar-title{
-            height: 50px;
-            line-height: 50px;
-            color:#ddd;
-            margin: 0;
-            text-align: center;
-            font-size: 18px;
-            background: #000;
-        }
-        .left-sidebar-search-container{
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .left-sidebar-search{
-            margin: 0;
-        }
-        .left-sidebar-search input, .left-sidebar-search button{
-            height: 40px;
-            line-height: 40px;
-            border: 0;
-            padding: 0;
-        }
-        .left-sidebar-search input{
-            width: 130px;
-        }
-        .left-sidebar-search button{
-            width: 70px;
-        }
-        .left-sidebar-result{
-            padding: 0;
-        }
-        .left-sidebar-result li{
-            list-style: none;
-            color: #ddd;
-            padding: 0 10px;
-            height: 40px;
-            line-height: 40px;
-            background: #777;
-        }
-        .left-sidebar-result li:hover{
-            background: #aaa;
-        }
         .main{
             width: 100%;
-            height: 100%;
-        }
-        .map-container{
-            height: 100%;
+            height: 400px;
         }
         #map{
-            margin: 0 auto;
             width: 100%;
             height: 100%;
+            border-radius: 5px;
+        }
+        .title{
+            font-size: 20px;
+            color: #eee;
+            display: inline-block;
+            height: 40px;
+            line-height: 40px;
+        }
+        .title-box{
+            background: #000;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-<header class="header"><button class="toggle-sidebar-btn">汉堡菜单</button></header>
-<div class="left-sidebar">
-    <h5 class="left-sidebar-title">街区地图 Block Map</h5>
-    <div class="left-sidebar-search-container">
-        <p class="left-sidebar-search"><input type="text" id="address" style=""><button>Filter</button></p>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12 title-box">
+            <span class="title">Block Map · 街区地图</span>
+        </div>
     </div>
-    <div class="left-sidebar-result-container">
-        <ul class="left-sidebar-result">
-            <li>123</li>
-            <li>123</li>
-            <li>123</li>
-            <li>123</li>
-            <li>123</li>
-        </ul>
+    <div class="row">
+        <div class="col-lg-12 alert alert-danger ERROR-MSG" style="margin-bottom:0;display:none;" role="alert" data-bind="text: errorMessage"></div>
+    </div>
+    <div class="row" style="background: #e5e3df;">
+        <div class="col-lg-12"><h3>搜索附近的兴趣点...</h3></div>
+    </div>
+    <div class="row" style="background: #e5e3df;">
+        <div class="col-xs-8 col-sm-10" style="padding-right: 20px;">
+            <input type="text" class="form-control" placeholder="地名" data-bind="textInput:searchText">
+        </div>
+        <div class="col-xs-4 col-sm-2" style="padding: 0;">
+            <button class="btn btn-primary" data-bind="click:searchPlaces">搜索</button>
+            <button class="btn btn-default" data-bind="click:reset">重置</button>
+        </div>
+    </div>
+    <div class="row" style="background: #e5e3df;padding-top:10px">
+        <div class="col-lg-12">
+            <div class="place-list">
+                <ol data-bind="foreach:filterPlaces">
+                    <li>
+                        <!--<span data-bind="text:$index"></span> -->
+                        <a href="javascript:void(0)" data-bind="text:name,click:$parent.clickPlaces"></a>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="background: #e5e3df;padding: 10px 0;">
+        <div class="col-lg-12">
+            <div class="main">
+                <div id="map"></div>
+            </div>
+        </div>
     </div>
 </div>
-<div class="main">
-    <div class="map-container">
-        <div id="map"></div>
-    </div>
 
-</div>
 
-<script>
-    function initMap(){
-        var uluru = {lat: -25.363, lng: 131.044};
-        var map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 4,
-            center: uluru
-        });
-        var marker = new google.maps.Marker({
-            position: uluru,
-            map: map
-        })
-    }
-</script>
 <script src="./js/lib/jquery-3.2.1.min.js"></script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzRQJLK4vHXGbtBF4WIOiubCfEM6yvBE8&callback=initMap"></script>
-<script>
-    $(function(){
-        $('.toggle-sidebar-btn').click(function(){
-            $('body').toggleClass('toggle-sidebar')
-        })
-    })
-</script>
+<script src="./js/lib/knockout-3.4.2.js"></script>
+<script src="./css/bootstrap/bootstrap.min.js"></script>
+<script src="./js/index.js"></script>
+<script async defer onerror="loadingError()" src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDzRQJLK4vHXGbtBF4WIOiubCfEM6yvBE8&libraries=places&callback=initPage"></script>
 </body>
 </html>
